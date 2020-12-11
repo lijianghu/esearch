@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>search</title>
+
+    <meta name="keywords" content="keyword1,keyword2,keyword3"></meta>
+    <meta name="description" content="this is my page"></meta>
+    <meta name="content-type" content="text/html; charset=UTF-8"></meta>
+
+    <!--<link rel="stylesheet" type="text/css" href="./styles.css">-->
+    <link rel="stylesheet" href="/css/vue-treeselect.min.css">
+    <link href="/css/vendors.bundle.css" rel="stylesheet" type="text/css" />
+    <link href="/css/style.bundle.css" rel="stylesheet" type="text/css"/>
+    <style>
+        .select-panel {
+            height: 0;
+            z-index: 999;
+            float:left;
+            position: absolute;
+
+        }
+        .select-item {
+            /*height: 0;*/
+            z-index: 999;
+            margin: 1px;
+            padding: 2px;
+            background: #fff;
+            opacity: 0.8;
+        }
+    </style>
+    <!-- 引入 Vue -->
+    <script src="./js/vue2.5.17.js"></script>
+    <!-- 引入 VueTree -->
+    <script src="/js/vue-treeselect.min.js"></script>
+    <!-- 引入 Vueresource -->
+    <script src="/js/vue-resource.js" type="text/javascript"></script>
+</head>
+
+<body>   <!--:value-consists-of="valueConsistsOf"-->
+<div id="app" align="center">
+    <div><label style="font-size: 30px;color: black">ES搜索</label></div>
+    <!--新增div中包含下拉框信息-->
+    <div align="left" style="margin-left: 365px;"><label style="font-size: 20px;color: black">筛选信息</label></div>
+    <div style="width: 800px">
+        <div v-for="(v,i) in list">
+            <div data-repeater-list="">
+                <div data-repeater-item>
+                    <div class="form-group  m-form__group row" style="padding-top: 15px;padding-bottom: 15px;">
+                        <label class="col-form-label col-lg-2 col-sm-12">学段学科<span
+                                style="color: #F00">*</span>
+                        </label>
+                        <div class="col-lg-3">
+                            <select class="form-control m-input&#45;&#45;fixed"
+                                    v-model="contactlist[i].id " @change="VerifyContactType(i)">
+                                <option v-for="option in contacttype_arr"
+                                        v-bind:value="option.id">{{ option.typename}}
+                                </option>
+                            </select>
+                        </div >
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    <!--新增div中包含搜索框-->
+    <div align="left" style="margin-left: 365px;"><label style="font-size: 20px;color: black">k名称（中文，全拼，简拼，英文，纠错）</label></div>
+    <div style="width: 800px">
+        <div v-for="(v,i) in contactlist">
+            <div data-repeater-list="">
+                <div data-repeater-item>
+                    <div class="form-group  m-form__group row" style="padding-top: 15px;padding-bottom: 15px;">
+                        <label class="col-form-label col-lg-2 col-sm-12">k名称搜索<span
+                                style="color: #F00">*</span>
+                        </label>
+                        <div class="col-lg-3">
+                            <input type="text" v-model="contactlist[i].name" @blur="onchangContactPersonName(i)"
+                                   class="form-control m-input&#45;&#45;fixed"
+                                   placeholder="请搜索k"/>
+                            <div  class="select-panel searchDoc">
+
+                            </div>
+                        </div >
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+</div>
+<script>
+    // register the component
+    Vue.http.options.emulateJSON = true;
+    Vue.component('treeselect', VueTreeselect.Treeselect)
+    new Vue({
+        el: '#app',
+        data: {
+            contacttype_arr:[
+                {id: 0, typename: '全部'},
+                {id: 19,typename: '小学语文'},
+                {id: 20,typename: '小学数学'},
+                {id: 21,typename: '小学英语'},
+                {id: 24,typename: '小学家庭教育'},
+                {id: 29,typename: '小学科学'},
+                {id: 31,typename: '小学信息技术'},
+                {id: 32,typename: '小学音乐'},
+                {id: 33,typename: '小学美术'},
+                {id: 34,typename: '小学思想品德'},
+                {id: 1,typename: '初中语文'},
+                {id: 3,typename: '初中数学'},
+                {id: 5,typename: '初中英语'},
+                {id: 7,typename: '初中物理'},
+                {id: 9,typename: '初中化学'},
+                {id: 11,typename: '初中生物'},
+                {id: 17,typename: '初中政治'},
+                {id: 13,typename: '初中历史'},
+                {id: 15,typename: '初中地理'},
+                {id: 25,typename: '初中科学'},
+                {id: 26,typename: '初中社会'},
+                {id: 27,typename: '初中信息技术'},
+                {id: 22,typename: '初中家庭教育'},
+                {id: 2,typename: '高中语文'},
+                {id: 4,typename: '高中数学'},
+                {id: 6,typename: '高中英语'},
+                {id: 8,typename: '高中物理'},
+                {id: 10,typename: '高中化学'},
+                {id: 12,typename: '高中生物'},
+                {id: 18,typename: '高中政治'},
+                {id: 14,typename: '高中历史'},
+                {id: 16,typename: '高中地理'},
+                {id: 28,typename: '高中信息技术'},
+                {id: 23,typename: '高中家庭教育'},
+                {id: 36,typename: '高中日语'},
+            ],
+            //数据类型
+            list:[
+                {contactType: '', number: ''}
+            ],
+            //数据数组
+            contactlist:[
+                {id:'',name: '', phone: '',isShow:false}
+            ],
+
+            words: [],//数据名搜索数组
+        },
+        //初始化方法
+        mounted:function () {
+
+        },
+        methods: {
+            //添加数据类型div
+            addNode:function() {
+                //判断数组长度不能超过 3
+                if(this.list.length<3){
+                    this.list.push({contactType: '', number: ''});
+                }else {
+                    alert("数据类型不能超过3个！");
+                }
+            },
+            //删除数据类型div
+            deleteNode:function(i) {
+                this.list.splice(i,1);
+            },
+            //校验数据类型，在数组中是否已经存在
+            VerifyContactType:function (i) {
+                var flag=true;
+                var tempcontactType=this.list[i].contactType;
+                for(var j=0;j<i;j++){
+                    if(this.list[j].contactType==tempcontactType){
+                        flag=false;
+                    }
+                }
+                if(flag==false){
+                    alert("数据类型已选择!");
+                    this.list[i].contactType='';
+                    return false;
+                }else {
+                    return true;
+                }
+            },
+
+            //删除数据div
+            deleteContactNode:function(i) {
+                //判断数组长度至少保留1
+                if(this.contactlist.length>1){
+                    this.contactlist.splice(i,1);
+                }else {
+                    alert("数据至少保留一个！");
+                }
+
+            },
+
+            //添加数据div
+            addContactNode:function() {
+                this.contactlist.push({name: '', phone: ''});
+            },
+            unescapeHTML :function(a) {
+                a = "" + a;
+                a = a.replace(/</g, "<")
+                .replace(/>/g, ">")
+                .replace(/&/g, "&")
+                .replace(/"/g, '"')
+                .replace(/&apos;/g, "'");
+                return a;
+            },
+            //监听数据变化
+            onchangContactPersonName:function (i) {
+                var name=this.contactlist[i].name;
+                var id=this.contactlist[i].id;
+                this.$http.post("/contact/findContactPersonList",{"id":id,name:name}).then(function(response) {
+                    this.words = response.data;
+                    //如果数据名称搜索为空，则给出提示
+                    if(this.words.length<1){
+                        alert("没有您要搜索的数据!");
+                        this.contactlist[i].name='';//清空输入的内容
+                    }else {
+                        var html= "";
+                        for(i = 0;i<this.words.length;i++){
+                            html+='<div  class="select-item">'+this.words[i].NAME+'</div>';
+                        };
+                        var x = document.getElementsByClassName("searchDoc");
+                        x[0].innerHTML = html;
+                    }
+                }).catch(function(response) {
+                    alert("调用后台接口失败!");
+                });
+            },
+            //单个数据选项点击事件
+            click_item:function(w,i) {
+                this.contactlist[i].id=w.ID;
+                this.contactlist[i].name=w.NAME;
+                this.contactlist[i].isShow=false;
+                // 校验数据名称是否已经输入
+                this.VerifyContactName(i);
+            },
+
+            //校验数据名称，在数组中是否已经存在
+            VerifyContactName:function (i) {
+                debugger
+                var flag=true;
+                var tempId=this.contactlist[i].id;
+                for(var j=0;j<i;j++){
+                    if(this.contactlist[j].id==tempId){
+                        flag=false;
+                    }
+                }
+                if(flag==false){
+                    alert("数据名称已输入!");
+                    this.contactlist[i].id=''
+                    this.contactlist[i].name='';//清空输入的内容
+                    return false;
+                }else {
+                    return true;
+                }
+            },
+
+        }
+    })
+</script>
+<!--<script src="/js/org.js" type="text/javascript"></script>-->
+</body>
+</html>
